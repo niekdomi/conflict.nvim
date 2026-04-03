@@ -4,8 +4,7 @@ _A simple NeoVim plugin to resolve merge conflicts with ease._
 
 This plugin was inspired by
 [git-conflict.nvim](https://github.com/akinsho/git-conflict.nvim). It began as
-a fork but resulted in a complete rewrite focused on a simpler, more performant
-codebase.
+a fork but resulted in a complete rewrite focused on a simpler codebase.
 
 <div align="center">
   <img src="assets/screenshot.png" width="600" alt="conflict.nvim demo">
