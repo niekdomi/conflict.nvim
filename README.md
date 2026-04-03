@@ -16,7 +16,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
-    "niekdomi/git-conflict.nvim",
+    "niekdomi/conflict.nvim",
     opts = {
         -- your configuration here
     }
