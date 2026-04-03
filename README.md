@@ -7,7 +7,7 @@ This plugins is inspired by the no longer maintained
 started this as a fork but ended up as a complete rewrite from scratch with a
 much simpler codebase.
 
-!(assets/screenshot.png)
+![example](assets/screenshot.png)
 
 ## Installation
 
