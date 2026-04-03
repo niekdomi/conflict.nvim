@@ -369,8 +369,9 @@ function M.setup(opts)
     })
 
     for action, key in pairs(config.default_mappings) do
-        if key and key ~= "" then
-            map("n", key, function() (cmds[action])(action) end, {
+        local handler = cmds[action]
+        if key and key ~= "" and handler then
+            map("n", key, function() handler(action) end, {
                 desc = "Conflict: " .. action,
                 buffer = false,
             })
