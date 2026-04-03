@@ -1,0 +1,11 @@
+words = [
+  "AUGROUP",
+  "lnum",
+  "nargs",
+  "virt",
+]
+
+include_paths = [
+  "**/*.lua",
+  "**/*.md",
+]
