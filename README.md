@@ -1,6 +1,6 @@
 # conflict.nvim
 
-_A simple NeoVim plugin to resolve merge conflicts with ease._
+_A simple Neovim plugin to resolve merge conflicts with ease._
 
 Its inline conflict UI is similar to the one found in
 [VS Code](https://code.visualstudio.com/docs/sourcecontrol/merge-conflicts#_editor-conflict-markers).

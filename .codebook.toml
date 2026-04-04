@@ -1,7 +1,11 @@
 words = [
-  "AUGROUP",
+  "augroup",
+  "bufnr",
   "lnum",
   "nargs",
+  "neovim",
+  "niekdomi",
+  "nvim",
   "virt",
 ]
 

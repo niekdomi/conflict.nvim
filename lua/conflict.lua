@@ -7,7 +7,7 @@ local map = vim.keymap.set
 -- Configuration & Constants
 --------------------------------------------------------------------------------
 
----@alias ConflictSide 'current'|'incoming'|'both'
+---@alias M.ConflictSide 'current'|'incoming'|'both'
 
 local NAMESPACE = api.nvim_create_namespace("conflict")
 local ACTIONS_NAMESPACE = api.nvim_create_namespace("conflict-actions")
@@ -86,7 +86,7 @@ end
 --------------------------------------------------------------------------------
 
 ---@param col integer @1-based column within the actions virtual text.
----@return ConflictSide? @The action side at that column, or nil.
+---@return M.ConflictSide? @The action side at that column, or nil.
 local function get_action_at_col(col)
     local cursor = 1
     for _, action in ipairs(ACTION_LABELS) do
@@ -246,7 +246,7 @@ end
 -- Public API
 --------------------------------------------------------------------------------
 
----@param side ConflictSide @Which side of the conflict to keep.
+---@param side M.ConflictSide @Which side of the conflict to keep.
 function M.choose(side)
     local bufnr = api.nvim_get_current_buf()
     local data = visited_buffers[api.nvim_buf_get_name(bufnr)]
