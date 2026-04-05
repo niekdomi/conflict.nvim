@@ -53,7 +53,10 @@ local cmds
 
 ---@param bufnr integer @Buffer handle to clear conflict mappings from.
 local function clear_buffer_mappings(bufnr)
-    if not api.nvim_buf_is_valid(bufnr) then return end
+    if not api.nvim_buf_is_valid(bufnr) then
+        return
+    end
+
     for _, km in ipairs(api.nvim_buf_get_keymap(bufnr, "n")) do
         if km.desc and km.desc:find("^Conflict: ") then
             pcall(vim.keymap.del, "n", km.lhs, { buffer = bufnr })
@@ -62,13 +65,17 @@ local function clear_buffer_mappings(bufnr)
 end
 
 local function set_buffer_mappings(bufnr)
-    if not api.nvim_buf_is_valid(bufnr) then return end
+    if not api.nvim_buf_is_valid(bufnr) then
+        return
+    end
     clear_buffer_mappings(bufnr)
 
     for action, key in pairs(config.default_mappings) do
         local handler = cmds[action]
         if type(key) == "string" and key ~= "" and handler then
-            map("n", key, function() handler(action) end, {
+            map("n", key, function()
+                handler(action)
+            end, {
                 desc = "Conflict: " .. action,
                 buffer = bufnr,
                 silent = true,
@@ -86,11 +93,15 @@ end
 ---@return string @Hex color string.
 local function shade_color(color, percent)
     local c = type(color) == "string" and api.nvim_get_color_by_name(color) or color
-    if c == -1 then return "#000000" end
+    if c == -1 then
+        return "#000000"
+    end
 
     local r, g, b = math.floor(c / 65536), math.floor(c / 256) % 256, c % 256
     local ratio = (100 + percent) / 100
-    local alter = function(val) return math.min(255, math.floor(val * ratio)) end
+    local alter = function(val)
+        return math.min(255, math.floor(val * ratio))
+    end
 
     return string.format("#%02x%02x%02x", alter(r), alter(g), alter(b))
 end
@@ -121,17 +132,23 @@ local function get_action_at_col(col)
     local cursor = 1
     for _, action in ipairs(ACTION_LABELS) do
         local width = #action.text
-        if col >= cursor and col < (cursor + width) then return action.side end
+        if col >= cursor and col < (cursor + width) then
+            return action.side
+        end
         cursor = cursor + width + 3 -- 3 for " | "
     end
 end
 
 local function handle_click()
     local mouse = vim.fn.getmousepos()
-    if not mouse.winid or mouse.winid == 0 then return end
+    if not mouse.winid or mouse.winid == 0 then
+        return
+    end
 
     local buf = api.nvim_win_get_buf(mouse.winid)
-    if not api.nvim_buf_is_valid(buf) then return end
+    if not api.nvim_buf_is_valid(buf) then
+        return
+    end
 
     for _, mark in ipairs(api.nvim_buf_get_extmarks(buf, ACTIONS_NAMESPACE, 0, -1, {})) do
         local row = mark[2]
@@ -157,7 +174,9 @@ end
 local function draw_sections(bufnr, positions, lines)
     local actions_line = {}
     for i, act in ipairs(ACTION_LABELS) do
-        if i > 1 then table.insert(actions_line, { " | ", "NonText" }) end
+        if i > 1 then
+            table.insert(actions_line, { " | ", "NonText" })
+        end
         table.insert(actions_line, { act.text, "Comment" })
     end
 
@@ -248,7 +267,9 @@ end
 
 ---@param bufnr integer @Buffer handle to scan for conflicts.
 local function parse_buffer(bufnr)
-    if not bufnr or not api.nvim_buf_is_valid(bufnr) then return end
+    if not bufnr or not api.nvim_buf_is_valid(bufnr) then
+        return
+    end
 
     local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
     local has_conflict, positions = detect_conflicts(lines)
@@ -282,13 +303,17 @@ end
 function M.choose(side)
     local bufnr = api.nvim_get_current_buf()
     local data = visited_buffers[api.nvim_buf_get_name(bufnr)]
-    if not data or #data.positions == 0 then return end
+    if not data or #data.positions == 0 then
+        return
+    end
 
     local cursor = api.nvim_win_get_cursor(0)[1] - 1
-    local pos = vim.iter(data.positions):find(
-        function(p) return cursor >= p.current.range_start and cursor <= p.incoming.range_end end
-    )
-    if not pos then return end
+    local pos = vim.iter(data.positions):find(function(p)
+        return cursor >= p.current.range_start and cursor <= p.incoming.range_end
+    end)
+    if not pos then
+        return
+    end
 
     local replacement = {}
     if side == "current" or side == "both" then
@@ -327,11 +352,15 @@ end
 function M.navigate(direction)
     local bufnr = api.nvim_get_current_buf()
     local data = visited_buffers[api.nvim_buf_get_name(bufnr)]
-    if not data or #data.positions == 0 then return end
+    if not data or #data.positions == 0 then
+        return
+    end
 
     local cursor = api.nvim_win_get_cursor(0)[1] - 1
     local it = vim.iter(data.positions)
-    if direction == "prev" then it:rev() end
+    if direction == "prev" then
+        it:rev()
+    end
 
     local target = it:find(function(p)
         local start = p.current.range_start
@@ -344,7 +373,9 @@ end
 ---@param bufnr? integer @Buffer handle, 0 or nil for current.
 function M.clear(bufnr)
     local b = (bufnr and bufnr ~= 0) and bufnr or api.nvim_get_current_buf()
-    if not api.nvim_buf_is_valid(b) then return end
+    if not api.nvim_buf_is_valid(b) then
+        return
+    end
     api.nvim_buf_clear_namespace(b, NAMESPACE, 0, -1)
     api.nvim_buf_clear_namespace(b, ACTIONS_NAMESPACE, 0, -1)
 end
@@ -375,7 +406,12 @@ function M.setup(opts)
                 { err = true }
             )
         end
-    end, { nargs = 1, complete = function() return vim.tbl_keys(cmds) end })
+    end, {
+        nargs = 1,
+        complete = function()
+            return vim.tbl_keys(cmds)
+        end,
+    })
 
     api.nvim_create_autocmd("ColorScheme", { group = AUGROUP, callback = set_highlights })
 
@@ -393,7 +429,9 @@ function M.setup(opts)
     })
 
     local bufnr = api.nvim_get_current_buf()
-    if vim.bo[bufnr].buftype == "" and vim.bo[bufnr].modifiable then parse_buffer(bufnr) end
+    if vim.bo[bufnr].buftype == "" and vim.bo[bufnr].modifiable then
+        parse_buffer(bufnr)
+    end
 end
 
 return M
