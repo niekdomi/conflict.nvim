@@ -7,7 +7,7 @@ local map = vim.keymap.set
 -- Configuration & Constants
 --------------------------------------------------------------------------------
 
----@alias M.ConflictSide 'current'|'incoming'|'both'
+---@alias M.ConflictSide 'current'|'incoming'|'both'|'none'
 
 local NAMESPACE = api.nvim_create_namespace("conflict")
 local ACTIONS_NAMESPACE = api.nvim_create_namespace("conflict-actions")
@@ -20,11 +20,12 @@ local CONFLICT_ANCESTOR = "^|||||||"
 
 local config = {
     default_mappings = {
-        current = "<leader>cc",
-        incoming = "<leader>ci",
-        both = "<leader>cb",
+        current = "cc",
+        incoming = "ci",
+        both = "cb",
         next = "]x",
         prev = "[x",
+        none = false,
     },
     show_actions = true,
     disable_diagnostics = true,
@@ -46,6 +47,35 @@ local ACTION_LABELS = {
 
 ---@type table<string, { bufnr: integer, positions: table[], tick: integer }>
 local visited_buffers = {}
+
+---@type table<string, function>
+local cmds
+
+---@param bufnr integer @Buffer handle to clear conflict mappings from.
+local function clear_buffer_mappings(bufnr)
+    if not api.nvim_buf_is_valid(bufnr) then return end
+    for _, km in ipairs(api.nvim_buf_get_keymap(bufnr, "n")) do
+        if km.desc and km.desc:find("^Conflict: ") then
+            pcall(vim.keymap.del, "n", km.lhs, { buffer = bufnr })
+        end
+    end
+end
+
+local function set_buffer_mappings(bufnr)
+    if not api.nvim_buf_is_valid(bufnr) then return end
+    clear_buffer_mappings(bufnr)
+
+    for action, key in pairs(config.default_mappings) do
+        local handler = cmds[action]
+        if type(key) == "string" and key ~= "" and handler then
+            map("n", key, function() handler(action) end, {
+                desc = "Conflict: " .. action,
+                buffer = bufnr,
+                silent = true,
+            })
+        end
+    end
+end
 
 --------------------------------------------------------------------------------
 -- UI & Highlights
@@ -237,8 +267,10 @@ local function parse_buffer(bufnr)
     if has_conflict then
         draw_sections(bufnr, positions, lines)
         map("n", "<LeftRelease>", handle_click, { buffer = bufnr, silent = true })
+        set_buffer_mappings(bufnr)
     else
         pcall(api.nvim_buf_del_keymap, bufnr, "n", "<LeftRelease>")
+        clear_buffer_mappings(bufnr)
     end
 end
 
@@ -281,7 +313,6 @@ function M.choose(side)
             )
         )
     end
-
     api.nvim_buf_set_lines(
         bufnr,
         pos.current.range_start,
@@ -323,13 +354,14 @@ function M.setup(opts)
     config = vim.tbl_deep_extend("force", config, opts or {})
     set_highlights()
 
-    local cmds = {
+    cmds = {
         next = M.navigate,
         prev = M.navigate,
         refresh = parse_buffer,
         current = M.choose,
         incoming = M.choose,
         both = M.choose,
+        none = M.choose,
     }
 
     api.nvim_create_user_command("Conflict", function(args)
@@ -359,16 +391,6 @@ function M.setup(opts)
             end
         end,
     })
-
-    for action, key in pairs(config.default_mappings) do
-        local handler = cmds[action]
-        if key and key ~= "" and handler then
-            map("n", key, function() handler(action) end, {
-                desc = "Conflict: " .. action,
-                buffer = false,
-            })
-        end
-    end
 
     local bufnr = api.nvim_get_current_buf()
     if vim.bo[bufnr].buftype == "" and vim.bo[bufnr].modifiable then parse_buffer(bufnr) end

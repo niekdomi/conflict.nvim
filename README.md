@@ -28,12 +28,16 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ## Configuration
 
+The following are the available options with their default values. You can set a
+mapping to `false` to disable it.
+
 ```lua
 require("conflict").setup({
     default_mappings = {
-        current = "<leader>cc",
-        incoming = "<leader>ci",
-        both = "<leader>cb",
+        current = "cc",
+        incoming = "ci",
+        both = "cb",
+        none = false,
         next = "]x",
         prev = "[x",
     },
@@ -50,10 +54,11 @@ require("conflict").setup({
 ## Commands
 
 | Command              | Description                            |
-| :------------------- | :------------------------------------- |
+| -------------------- | -------------------------------------- |
 | `:Conflict current`  | Keep the **current** (local) changes   |
 | `:Conflict incoming` | Keep the **incoming** (remote) changes |
 | `:Conflict both`     | Keep **both** sections                 |
+| `:Conflict none`     | Keep **neither** section               |
 | `:Conflict next`     | Jump to the next conflict              |
 | `:Conflict prev`     | Jump to the previous conflict          |
 | `:Conflict refresh`  | Manually re-parse the buffer           |
