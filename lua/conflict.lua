@@ -64,6 +64,7 @@ local function clear_buffer_mappings(bufnr)
     end
 end
 
+---@param bufnr integer @Buffer handle to set conflict mappings on.
 local function set_buffer_mappings(bufnr)
     if not api.nvim_buf_is_valid(bufnr) then
         return
@@ -106,6 +107,7 @@ local function shade_color(color, percent)
     return string.format("#%02x%02x%02x", alter(r), alter(g), alter(b))
 end
 
+---Sets highlight groups for conflict sections based on the configured colorscheme.
 local function set_highlights()
     local h = config.highlights
     local current_bg = (api.nvim_get_hl(0, { name = h.current })).bg or "#264334"
@@ -139,6 +141,7 @@ local function get_action_at_col(col)
     end
 end
 
+---Handles mouse click on action labels to resolve conflicts.
 local function handle_click()
     local mouse = vim.fn.getmousepos()
     if not mouse.winid or mouse.winid == 0 then
@@ -370,6 +373,30 @@ function M.navigate(direction)
     api.nvim_win_set_cursor(0, { target.current.range_start + 1, 0 })
 end
 
+---@return string[] @List of file paths with unmerged conflicts.
+function M.get_conflicted_files()
+    local files = vim.fn.systemlist("git diff --name-only --diff-filter=U")
+    if vim.v.shell_error ~= 0 then
+        return {}
+    end
+    return files
+end
+
+---Opens a picker to select and open a file with unmerged conflicts.
+function M.list()
+    local files = M.get_conflicted_files()
+    if #files == 0 then
+        vim.notify("No conflicted files found", vim.log.levels.INFO)
+        return
+    end
+
+    vim.ui.select(files, { prompt = "Git Conflicts" }, function(choice)
+        if choice then
+            vim.cmd.edit(choice)
+        end
+    end)
+end
+
 ---@param bufnr? integer @Buffer handle, 0 or nil for current.
 function M.clear(bufnr)
     local b = (bufnr and bufnr ~= 0) and bufnr or api.nvim_get_current_buf()
@@ -393,6 +420,7 @@ function M.setup(opts)
         incoming = M.choose,
         both = M.choose,
         none = M.choose,
+        list = M.list,
     }
 
     api.nvim_create_user_command("Conflict", function(args)

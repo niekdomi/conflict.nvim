@@ -61,7 +61,19 @@ require("conflict").setup({
 | `:Conflict none`     | Keep **neither** section               |
 | `:Conflict next`     | Jump to the next conflict              |
 | `:Conflict prev`     | Jump to the previous conflict          |
+| `:Conflict list`     | List all conflicted files in a picker  |
 | `:Conflict refresh`  | Manually re-parse the buffer           |
+
+## Telescope Integration
+
+An optional [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim)
+extension is included for browsing conflicted files with a preview.
+
+```lua
+require("telescope").load_extension("git_conflict")
+```
+
+Then run `:Telescope git_conflict`.
 
 ## Mouse Support
 
