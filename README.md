@@ -18,11 +18,13 @@ latest API.
 Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
-{
+return {
     "niekdomi/conflict.nvim",
-    opts = {
-        -- your configuration here
-    }
+    config = function()
+        require("conflict").setup({
+            -- your config here
+        })
+    end,
 }
 ```
 
