@@ -7,7 +7,13 @@ local map = vim.keymap.set
 -- Configuration & Constants
 --------------------------------------------------------------------------------
 
----@alias M.ConflictSide 'current'|'incoming'|'both'|'none'
+---@alias ConflictSide 'current'|'incoming'|'both'|'none'
+
+---@class ConflictConfig
+---@field default_mappings table<string, string|false>
+---@field show_actions boolean
+---@field disable_diagnostics boolean
+---@field highlights { current: string, incoming: string }
 
 local NAMESPACE = api.nvim_create_namespace("conflict")
 local ACTIONS_NAMESPACE = api.nvim_create_namespace("conflict-actions")
@@ -18,6 +24,7 @@ local CONFLICT_MIDDLE = "^======="
 local CONFLICT_END = "^>>>>>>>"
 local CONFLICT_ANCESTOR = "^|||||||"
 
+---@type ConflictConfig
 local config = {
     default_mappings = {
         current = "cc",
@@ -45,7 +52,7 @@ local ACTION_LABELS = {
 -- State Management
 --------------------------------------------------------------------------------
 
----@type table<string, { bufnr: integer, positions: table[], tick: integer }>
+---@type table<string, { bufnr: integer, positions: table, tick: integer }>
 local visited_buffers = {}
 
 ---@type table<string, function>
@@ -58,7 +65,7 @@ local function clear_buffer_mappings(bufnr)
     end
 
     for _, km in ipairs(api.nvim_buf_get_keymap(bufnr, "n")) do
-        if km.desc and km.desc:find("^Conflict: ") then
+        if km.lhs and km.desc and km.desc:find("^Conflict: ") then
             pcall(vim.keymap.del, "n", km.lhs, { buffer = bufnr })
         end
     end
@@ -129,7 +136,7 @@ end
 --------------------------------------------------------------------------------
 
 ---@param col integer @1-based column within the actions virtual text.
----@return M.ConflictSide? @The action side at that column, or nil.
+---@return ConflictSide? @The action side at that column, or nil.
 local function get_action_at_col(col)
     local cursor = 1
     for _, action in ipairs(ACTION_LABELS) do
@@ -235,6 +242,7 @@ end
 ---@return boolean, table[] @True if conflicts found, and the list of conflict position objects.
 local function detect_conflicts(lines)
     local positions = {}
+    ---@type table?
     local current = nil
 
     for i, line in ipairs(lines) do
@@ -302,7 +310,7 @@ end
 -- Public API
 --------------------------------------------------------------------------------
 
----@param side M.ConflictSide @Which side of the conflict to keep.
+---@param side ConflictSide @Which side of the conflict to keep.
 function M.choose(side)
     local bufnr = api.nvim_get_current_buf()
     local data = visited_buffers[api.nvim_buf_get_name(bufnr)]
