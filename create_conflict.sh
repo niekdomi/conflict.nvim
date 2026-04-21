@@ -54,6 +54,6 @@ perl -i -pe '
 ' conflicted.lua
 
 git commit -am 'update on main' >/dev/null 2>&1
-git merge new_branch >/dev/null 2>&1
+git -c merge.conflictstyle=diff3 merge new_branch >/dev/null 2>&1
 
 echo "Conflicted file created in $TARGET_DIR/conflicted.lua"

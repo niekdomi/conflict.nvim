@@ -7,13 +7,13 @@ local map = vim.keymap.set
 -- Configuration & Constants
 --------------------------------------------------------------------------------
 
----@alias ConflictSide 'current'|'incoming'|'both'|'none'
+---@alias ConflictSide 'current'|'incoming'|'both'|'base'|'none'
 
 ---@class ConflictConfig
 ---@field default_mappings table<string, string|false>
 ---@field show_actions boolean
 ---@field disable_diagnostics boolean
----@field highlights { current: string, incoming: string }
+---@field highlights { current: string, incoming: string, ancestor: string }
 
 local NAMESPACE = api.nvim_create_namespace("conflict")
 local ACTIONS_NAMESPACE = api.nvim_create_namespace("conflict-actions")
@@ -24,12 +24,26 @@ local CONFLICT_MIDDLE = "^======="
 local CONFLICT_END = "^>>>>>>>"
 local CONFLICT_ANCESTOR = "^|||||||"
 
+local ACTION_LABELS = {
+    { text = "Accept Current", side = "current" },
+    { text = "Accept Incoming", side = "incoming" },
+    { text = "Accept Both", side = "both" },
+}
+
+local ACTION_LABELS_WITH_BASE = {
+    { text = "Accept Current", side = "current" },
+    { text = "Accept Incoming", side = "incoming" },
+    { text = "Accept Both", side = "both" },
+    { text = "Accept Base", side = "base" },
+}
+
 ---@type ConflictConfig
 local config = {
     default_mappings = {
         current = "cc",
         incoming = "ci",
         both = "cb",
+        base = "cB",
         next = "]x",
         prev = "[x",
         none = false,
@@ -39,13 +53,8 @@ local config = {
     highlights = {
         current = "DiffText",
         incoming = "DiffAdd",
+        ancestor = "DiffChange",
     },
-}
-
-local ACTION_LABELS = {
-    { text = "Accept Current", side = "current" },
-    { text = "Accept Incoming", side = "incoming" },
-    { text = "Accept Both", side = "both" },
 }
 
 --------------------------------------------------------------------------------
@@ -128,12 +137,15 @@ local function set_highlights()
     local shade_pct = is_light and -15 or 60
     local current_bg = hl_bg(h.current, is_light and "#c8e6c9" or "#264334")
     local incoming_bg = hl_bg(h.incoming, is_light and "#bbdefb" or "#214566")
+    local ancestor_bg = hl_bg(h.ancestor, is_light and "#e1bee7" or "#4a2a52")
 
     for name, opts in pairs({
         ConflictCurrent = { bg = current_bg, bold = true },
         ConflictIncoming = { bg = incoming_bg, bold = true },
+        ConflictAncestor = { bg = ancestor_bg, bold = true },
         ConflictCurrentLabel = { bg = shade_color(current_bg, shade_pct) },
         ConflictIncomingLabel = { bg = shade_color(incoming_bg, shade_pct) },
+        ConflictAncestorLabel = { bg = shade_color(ancestor_bg, shade_pct) },
     }) do
         opts.default = true
         api.nvim_set_hl(0, name, opts)
@@ -145,10 +157,11 @@ end
 --------------------------------------------------------------------------------
 
 ---@param col integer @1-based column within the actions virtual text.
+---@param labels table @Action labels list matching what was rendered.
 ---@return ConflictSide? @The action side at that column, or nil.
-local function get_action_at_col(col)
+local function get_action_at_col(col, labels)
     local cursor = 1
-    for _, action in ipairs(ACTION_LABELS) do
+    for _, action in ipairs(labels) do
         local width = #action.text
         if col >= cursor and col < (cursor + width) then
             return action.side
@@ -169,11 +182,22 @@ local function handle_click()
         return
     end
 
+    local data = visited_buffers[api.nvim_buf_get_name(buf)]
+    if not data then
+        return
+    end
+
     for _, mark in ipairs(api.nvim_buf_get_extmarks(buf, ACTIONS_NAMESPACE, 0, -1, {})) do
         local row = mark[2]
         local anchor = vim.fn.screenpos(mouse.winid, row + 1, 1)
         if anchor.row > 0 and mouse.screenrow == anchor.row - 1 then
-            local side = get_action_at_col(mouse.screencol - anchor.col + 1)
+            local pos = vim.iter(data.positions):find(function(p)
+                local p_anchor = p.current.range_start > 0 and p.current.range_start
+                    or p.current.content_start
+                return p_anchor == row
+            end)
+            local labels = (pos and pos.ancestor) and ACTION_LABELS_WITH_BASE or ACTION_LABELS
+            local side = get_action_at_col(mouse.screencol - anchor.col + 1, labels)
             if side then
                 api.nvim_win_set_cursor(mouse.winid, { row + 1, 0 })
                 M.choose(side)
@@ -191,23 +215,30 @@ end
 ---@param positions table[] @List of conflict position objects.
 ---@param lines string[] @All buffer lines for label text extraction.
 local function draw_sections(bufnr, positions, lines)
-    local actions_line = {}
-    for i, act in ipairs(ACTION_LABELS) do
-        if i > 1 then
-            table.insert(actions_line, { " | ", "NonText" })
+    local function build_actions_line(labels)
+        local result = {}
+        for i, act in ipairs(labels) do
+            if i > 1 then
+                table.insert(result, { " | ", "NonText" })
+            end
+            table.insert(result, { act.text, "Comment" })
         end
-        table.insert(actions_line, { act.text, "Comment" })
+        return result
     end
+
+    local actions_line = build_actions_line(ACTION_LABELS)
+    local actions_line_with_base = build_actions_line(ACTION_LABELS_WITH_BASE)
 
     for _, pos in ipairs(positions) do
         local range_start = pos.current.range_start
         local middle_start = pos.middle.range_start
         local incoming_end = pos.incoming.range_end
+        local ancestor_start = pos.ancestor and pos.ancestor.range_start
 
         if config.show_actions then
             local anchor = range_start > 0 and range_start or pos.current.content_start
             api.nvim_buf_set_extmark(bufnr, ACTIONS_NAMESPACE, anchor, 0, {
-                virt_lines = { actions_line },
+                virt_lines = { ancestor_start and actions_line_with_base or actions_line },
                 virt_lines_above = true,
             })
         end
@@ -230,9 +261,18 @@ local function draw_sections(bufnr, positions, lines)
         set_label(range_start, "ConflictCurrentLabel", " (Current)")
         api.nvim_buf_set_extmark(bufnr, NAMESPACE, range_start, 0, {
             hl_group = "ConflictCurrent",
-            end_row = middle_start or incoming_end,
+            end_row = ancestor_start or middle_start or incoming_end,
             hl_eol = true,
         })
+
+        if ancestor_start then
+            set_label(ancestor_start, "ConflictAncestorLabel", " (Base)")
+            api.nvim_buf_set_extmark(bufnr, NAMESPACE, ancestor_start, 0, {
+                hl_group = "ConflictAncestor",
+                end_row = middle_start or incoming_end,
+                hl_eol = true,
+            })
+        end
 
         set_label(incoming_end, "ConflictIncomingLabel", " (Incoming)")
         api.nvim_buf_set_extmark(bufnr, NAMESPACE, (middle_start or range_start) + 1, 0, {
@@ -264,15 +304,23 @@ local function detect_conflicts(lines)
                 incoming = {},
             }
         elseif current then
-            if line:match(CONFLICT_ANCESTOR) or line:match(CONFLICT_MIDDLE) then
+            if line:match(CONFLICT_ANCESTOR) then
                 if not current.current.content_end then
                     current.current.content_end = lnum - 1
                     current.current.range_end = lnum - 1
                 end
-                if line:match(CONFLICT_MIDDLE) then
-                    current.middle = { range_start = lnum, range_end = lnum + 1 }
-                    current.incoming = { range_start = lnum + 1, content_start = lnum + 1 }
+                current.ancestor = { range_start = lnum, content_start = lnum + 1 }
+            elseif line:match(CONFLICT_MIDDLE) then
+                if not current.current.content_end then
+                    current.current.content_end = lnum - 1
+                    current.current.range_end = lnum - 1
                 end
+                if current.ancestor then
+                    current.ancestor.content_end = lnum - 1
+                    current.ancestor.range_end = lnum - 1
+                end
+                current.middle = { range_start = lnum, range_end = lnum + 1 }
+                current.incoming = { range_start = lnum + 1, content_start = lnum + 1 }
             elseif line:match(CONFLICT_END) then
                 current.incoming.range_end = lnum
                 current.incoming.content_end = lnum - 1
@@ -331,7 +379,12 @@ function M.choose(side)
     local pos = vim.iter(data.positions):find(function(p)
         return cursor >= p.current.range_start and cursor <= p.incoming.range_end
     end)
+
     if not pos then
+        return
+    end
+
+    if side == "base" and not pos.ancestor then
         return
     end
 
@@ -354,6 +407,17 @@ function M.choose(side)
                 bufnr,
                 pos.incoming.content_start,
                 pos.incoming.content_end + 1,
+                false
+            )
+        )
+    end
+    if side == "base" then
+        vim.list_extend(
+            replacement,
+            api.nvim_buf_get_lines(
+                bufnr,
+                pos.ancestor.content_start,
+                pos.ancestor.content_end + 1,
                 false
             )
         )
@@ -436,6 +500,7 @@ function M.setup(opts)
         current = M.choose,
         incoming = M.choose,
         both = M.choose,
+        base = M.choose,
         none = M.choose,
         list = M.list,
     }
