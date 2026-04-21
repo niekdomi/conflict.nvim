@@ -39,6 +39,7 @@ require("conflict").setup({
         current = "cc",
         incoming = "ci",
         both = "cb",
+        base = "cB",
         none = false,
         next = "]x",
         prev = "[x",
@@ -49,22 +50,24 @@ require("conflict").setup({
         -- Names of highlight groups to use for sections
         current = "DiffText",
         incoming = "DiffAdd",
+        ancestor = "DiffChange",
     },
 })
 ```
 
 ## Commands
 
-| Command              | Description                            |
-| -------------------- | -------------------------------------- |
-| `:Conflict current`  | Keep the **current** (local) changes   |
-| `:Conflict incoming` | Keep the **incoming** (remote) changes |
-| `:Conflict both`     | Keep **both** sections                 |
-| `:Conflict none`     | Keep **neither** section               |
-| `:Conflict next`     | Jump to the next conflict              |
-| `:Conflict prev`     | Jump to the previous conflict          |
+| Command              | Description                                   |
+| -------------------- | --------------------------------------------- |
+| `:Conflict current`  | Keep the **current** (local) changes          |
+| `:Conflict incoming` | Keep the **incoming** (remote) changes        |
+| `:Conflict both`     | Keep **both** sections                        |
+| `:Conflict base`     | Keep the **base** (ancestor) changes          |
+| `:Conflict none`     | Keep **neither** section                      |
+| `:Conflict next`     | Jump to the next conflict                     |
+| `:Conflict prev`     | Jump to the previous conflict                 |
 | `:Conflict list`     | List all conflicted files via `vim.ui.select` |
-| `:Conflict refresh`  | Manually re-parse the buffer           |
+| `:Conflict refresh`  | Manually re-parse the buffer                  |
 
 ## Mouse Support
 
