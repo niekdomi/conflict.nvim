@@ -39,8 +39,6 @@ local config = {
     highlights = {
         current = "DiffText",
         incoming = "DiffAdd",
-        current_label = nil,
-        incoming_label = nil,
     },
 }
 
@@ -116,31 +114,26 @@ local function shade_color(color, percent)
     return string.format("#%02x%02x%02x", alter(r), alter(g), alter(b))
 end
 
----@param hl_name? string @Optional highlight group name to read bg from.
----@param fallback_bg string|integer @Fallback bg color used with shade_color.
----@return string|integer @Resolved bg color.
-local function resolve_label_bg(hl_name, fallback_bg)
-    if hl_name then
-        local bg = (api.nvim_get_hl(0, { name = hl_name })).bg
-        if bg then
-            return bg
-        end
-    end
-    local label_shade = vim.o.background == "dark" and 60 or -15
-    return shade_color(fallback_bg, label_shade)
+---@param name string @Highlight group name.
+---@param fallback string @Hex fallback if the HL group has no resolved bg.
+---@return string|integer
+local function hl_bg(name, fallback)
+    return api.nvim_get_hl(0, { name = name, link = false }).bg or fallback
 end
 
 ---Sets highlight groups for conflict sections based on the configured colorscheme.
 local function set_highlights()
     local h = config.highlights
-    local current_bg = (api.nvim_get_hl(0, { name = h.current })).bg or "#264334"
-    local incoming_bg = (api.nvim_get_hl(0, { name = h.incoming })).bg or "#214566"
+    local is_light = vim.o.background == "light"
+    local shade_pct = is_light and -15 or 60
+    local current_bg = hl_bg(h.current, is_light and "#c8e6c9" or "#264334")
+    local incoming_bg = hl_bg(h.incoming, is_light and "#bbdefb" or "#214566")
 
     for name, opts in pairs({
         ConflictCurrent = { bg = current_bg, bold = true },
         ConflictIncoming = { bg = incoming_bg, bold = true },
-        ConflictCurrentLabel = { bg = resolve_label_bg(h.current_label, current_bg) },
-        ConflictIncomingLabel = { bg = resolve_label_bg(h.incoming_label, incoming_bg) },
+        ConflictCurrentLabel = { bg = shade_color(current_bg, shade_pct) },
+        ConflictIncomingLabel = { bg = shade_color(incoming_bg, shade_pct) },
     }) do
         opts.default = true
         api.nvim_set_hl(0, name, opts)
