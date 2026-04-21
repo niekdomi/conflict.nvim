@@ -32,6 +32,8 @@ local config = {
     highlights = {
         current = "DiffText",
         incoming = "DiffAdd",
+        current_label = nil,
+        incoming_label = nil,
     },
 }
 
@@ -101,10 +103,24 @@ local function shade_color(color, percent)
     local r, g, b = math.floor(c / 65536), math.floor(c / 256) % 256, c % 256
     local ratio = (100 + percent) / 100
     local alter = function(val)
-        return math.min(255, math.floor(val * ratio))
+        return math.max(0, math.min(255, math.floor(val * ratio)))
     end
 
     return string.format("#%02x%02x%02x", alter(r), alter(g), alter(b))
+end
+
+---@param hl_name? string @Optional highlight group name to read bg from.
+---@param fallback_bg string|integer @Fallback bg color used with shade_color.
+---@return string|integer @Resolved bg color.
+local function resolve_label_bg(hl_name, fallback_bg)
+    if hl_name then
+        local bg = (api.nvim_get_hl(0, { name = hl_name })).bg
+        if bg then
+            return bg
+        end
+    end
+    local label_shade = vim.o.background == "dark" and 60 or -30
+    return shade_color(fallback_bg, label_shade)
 end
 
 ---Sets highlight groups for conflict sections based on the configured colorscheme.
@@ -116,8 +132,8 @@ local function set_highlights()
     for name, opts in pairs({
         ConflictCurrent = { bg = current_bg, bold = true },
         ConflictIncoming = { bg = incoming_bg, bold = true },
-        ConflictCurrentLabel = { bg = shade_color(current_bg, 60) },
-        ConflictIncomingLabel = { bg = shade_color(incoming_bg, 60) },
+        ConflictCurrentLabel = { bg = resolve_label_bg(h.current_label, current_bg) },
+        ConflictIncomingLabel = { bg = resolve_label_bg(h.incoming_label, incoming_bg) },
     }) do
         opts.default = true
         api.nvim_set_hl(0, name, opts)
