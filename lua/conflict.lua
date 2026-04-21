@@ -119,7 +119,7 @@ local function resolve_label_bg(hl_name, fallback_bg)
             return bg
         end
     end
-    local label_shade = vim.o.background == "dark" and 60 or -30
+    local label_shade = vim.o.background == "dark" and 60 or -15
     return shade_color(fallback_bg, label_shade)
 end
 
