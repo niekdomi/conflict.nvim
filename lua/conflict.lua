@@ -135,9 +135,9 @@ local function set_highlights()
     local h = config.highlights
     local is_light = vim.o.background == "light"
     local shade_pct = is_light and -15 or 60
-    local current_bg = hl_bg(h.current, is_light and "#c8e6c9" or "#264334")
-    local incoming_bg = hl_bg(h.incoming, is_light and "#bbdefb" or "#214566")
-    local ancestor_bg = hl_bg(h.ancestor, is_light and "#e1bee7" or "#4a2a52")
+    local current_bg = hl_bg(h.current, is_light and "#C8E6C9" or "#264334")
+    local incoming_bg = hl_bg(h.incoming, is_light and "#BBDEFB" or "#214566")
+    local ancestor_bg = hl_bg(h.ancestor, is_light and "#E1BEE7" or "#4A2A52")
 
     for name, opts in pairs({
         ConflictCurrent = { bg = current_bg, bold = true },
