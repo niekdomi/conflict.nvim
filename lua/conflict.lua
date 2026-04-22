@@ -1,8 +1,5 @@
 local M = {}
 
-local api = vim.api
-local map = vim.keymap.set
-
 --------------------------------------------------------------------------------
 -- Configuration & Constants
 --------------------------------------------------------------------------------
@@ -15,9 +12,9 @@ local map = vim.keymap.set
 ---@field disable_diagnostics boolean
 ---@field highlights { current: string, incoming: string, ancestor: string }
 
-local NAMESPACE = api.nvim_create_namespace("conflict")
-local ACTIONS_NAMESPACE = api.nvim_create_namespace("conflict-actions")
-local AUGROUP = api.nvim_create_augroup("ConflictCommands", { clear = true })
+local NAMESPACE = vim.api.nvim_create_namespace("conflict")
+local ACTIONS_NAMESPACE = vim.api.nvim_create_namespace("conflict-actions")
+local AUGROUP = vim.api.nvim_create_augroup("ConflictCommands", { clear = true })
 
 local CONFLICT_START = "^<<<<<<<"
 local CONFLICT_MIDDLE = "^======="
@@ -69,11 +66,11 @@ local cmds
 
 ---@param bufnr integer @Buffer handle to clear conflict mappings from.
 local function clear_buffer_mappings(bufnr)
-    if not api.nvim_buf_is_valid(bufnr) then
+    if not vim.api.nvim_buf_is_valid(bufnr) then
         return
     end
 
-    for _, km in ipairs(api.nvim_buf_get_keymap(bufnr, "n")) do
+    for _, km in ipairs(vim.api.nvim_buf_get_keymap(bufnr, "n")) do
         if km.lhs and km.desc and km.desc:find("^Conflict: ") then
             pcall(vim.keymap.del, "n", km.lhs, { buffer = bufnr })
         end
@@ -82,7 +79,7 @@ end
 
 ---@param bufnr integer @Buffer handle to set conflict mappings on.
 local function set_buffer_mappings(bufnr)
-    if not api.nvim_buf_is_valid(bufnr) then
+    if not vim.api.nvim_buf_is_valid(bufnr) then
         return
     end
     clear_buffer_mappings(bufnr)
@@ -90,7 +87,7 @@ local function set_buffer_mappings(bufnr)
     for action, key in pairs(config.default_mappings) do
         local handler = cmds[action]
         if type(key) == "string" and key ~= "" and handler then
-            map("n", key, function()
+            vim.keymap.set("n", key, function()
                 handler(action)
             end, {
                 desc = "Conflict: " .. action,
@@ -109,7 +106,7 @@ end
 ---@param percent integer @Percentage to lighten or darken.
 ---@return string @Hex color string.
 local function shade_color(color, percent)
-    local c = type(color) == "string" and api.nvim_get_color_by_name(color) or color
+    local c = type(color) == "string" and vim.api.nvim_get_color_by_name(color) or color
     if c == -1 then
         return "#000000"
     end
@@ -127,7 +124,7 @@ end
 ---@param fallback string @Hex fallback if the HL group has no resolved bg.
 ---@return string|integer
 local function hl_bg(name, fallback)
-    return api.nvim_get_hl(0, { name = name, link = false }).bg or fallback
+    return vim.api.nvim_get_hl(0, { name = name, link = false }).bg or fallback
 end
 
 ---Sets highlight groups for conflict sections based on the configured colorscheme.
@@ -148,7 +145,7 @@ local function set_highlights()
         ConflictAncestorLabel = { bg = shade_color(ancestor_bg, shade_pct) },
     }) do
         opts.default = true
-        api.nvim_set_hl(0, name, opts)
+        vim.api.nvim_set_hl(0, name, opts)
     end
 end
 
@@ -177,17 +174,17 @@ local function handle_click()
         return
     end
 
-    local buf = api.nvim_win_get_buf(mouse.winid)
-    if not api.nvim_buf_is_valid(buf) then
+    local buf = vim.api.nvim_win_get_buf(mouse.winid)
+    if not vim.api.nvim_buf_is_valid(buf) then
         return
     end
 
-    local data = visited_buffers[api.nvim_buf_get_name(buf)]
+    local data = visited_buffers[vim.api.nvim_buf_get_name(buf)]
     if not data then
         return
     end
 
-    for _, mark in ipairs(api.nvim_buf_get_extmarks(buf, ACTIONS_NAMESPACE, 0, -1, {})) do
+    for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, ACTIONS_NAMESPACE, 0, -1, {})) do
         local row = mark[2]
         local anchor = vim.fn.screenpos(mouse.winid, row + 1, 1)
         if anchor.row > 0 and mouse.screenrow == anchor.row - 1 then
@@ -199,7 +196,7 @@ local function handle_click()
             local labels = (pos and pos.ancestor) and ACTION_LABELS_WITH_BASE or ACTION_LABELS
             local side = get_action_at_col(mouse.screencol - anchor.col + 1, labels)
             if side then
-                api.nvim_win_set_cursor(mouse.winid, { row + 1, 0 })
+                vim.api.nvim_win_set_cursor(mouse.winid, { row + 1, 0 })
                 M.choose(side)
                 return
             end
@@ -237,7 +234,7 @@ local function draw_sections(bufnr, positions, lines)
 
         if config.show_actions then
             local anchor = range_start > 0 and range_start or pos.current.content_start
-            api.nvim_buf_set_extmark(bufnr, ACTIONS_NAMESPACE, anchor, 0, {
+            vim.api.nvim_buf_set_extmark(bufnr, ACTIONS_NAMESPACE, anchor, 0, {
                 virt_lines = { ancestor_start and actions_line_with_base or actions_line },
                 virt_lines_above = true,
             })
@@ -245,7 +242,7 @@ local function draw_sections(bufnr, positions, lines)
 
         -- Overlay marker lines with labels
         local function set_label(row, hl, suffix)
-            api.nvim_buf_set_extmark(bufnr, NAMESPACE, row, 0, {
+            vim.api.nvim_buf_set_extmark(bufnr, NAMESPACE, row, 0, {
                 hl_group = hl,
                 virt_text = { { (lines[row + 1] or "") .. suffix .. string.rep(" ", 200), hl } },
                 virt_text_pos = "overlay",
@@ -253,13 +250,13 @@ local function draw_sections(bufnr, positions, lines)
         end
 
         if middle_start then
-            api.nvim_buf_set_extmark(bufnr, NAMESPACE, middle_start, 0, {
+            vim.api.nvim_buf_set_extmark(bufnr, NAMESPACE, middle_start, 0, {
                 line_hl_group = "NonText",
             })
         end
 
         set_label(range_start, "ConflictCurrentLabel", " (Current)")
-        api.nvim_buf_set_extmark(bufnr, NAMESPACE, range_start, 0, {
+        vim.api.nvim_buf_set_extmark(bufnr, NAMESPACE, range_start, 0, {
             hl_group = "ConflictCurrent",
             end_row = ancestor_start or middle_start or incoming_end,
             hl_eol = true,
@@ -267,7 +264,7 @@ local function draw_sections(bufnr, positions, lines)
 
         if ancestor_start then
             set_label(ancestor_start, "ConflictAncestorLabel", " (Base)")
-            api.nvim_buf_set_extmark(bufnr, NAMESPACE, ancestor_start, 0, {
+            vim.api.nvim_buf_set_extmark(bufnr, NAMESPACE, ancestor_start, 0, {
                 hl_group = "ConflictAncestor",
                 end_row = middle_start or incoming_end,
                 hl_eol = true,
@@ -275,7 +272,7 @@ local function draw_sections(bufnr, positions, lines)
         end
 
         set_label(incoming_end, "ConflictIncomingLabel", " (Incoming)")
-        api.nvim_buf_set_extmark(bufnr, NAMESPACE, (middle_start or range_start) + 1, 0, {
+        vim.api.nvim_buf_set_extmark(bufnr, NAMESPACE, (middle_start or range_start) + 1, 0, {
             hl_group = "ConflictIncoming",
             end_row = incoming_end + 1,
             hl_eol = true,
@@ -335,18 +332,18 @@ end
 
 ---@param bufnr integer @Buffer handle to scan for conflicts.
 local function parse_buffer(bufnr)
-    if not bufnr or not api.nvim_buf_is_valid(bufnr) then
+    if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
         return
     end
 
-    local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     local has_conflict, positions = detect_conflicts(lines)
 
     M.clear(bufnr)
-    visited_buffers[api.nvim_buf_get_name(bufnr)] = {
+    visited_buffers[vim.api.nvim_buf_get_name(bufnr)] = {
         bufnr = bufnr,
         positions = positions,
-        tick = api.nvim_buf_get_changedtick(bufnr),
+        tick = vim.api.nvim_buf_get_changedtick(bufnr),
     }
 
     if config.disable_diagnostics then
@@ -355,10 +352,10 @@ local function parse_buffer(bufnr)
 
     if has_conflict then
         draw_sections(bufnr, positions, lines)
-        map("n", "<LeftRelease>", handle_click, { buffer = bufnr, silent = true })
+        vim.keymap.set("n", "<LeftRelease>", handle_click, { buffer = bufnr, silent = true })
         set_buffer_mappings(bufnr)
     else
-        pcall(api.nvim_buf_del_keymap, bufnr, "n", "<LeftRelease>")
+        pcall(vim.api.nvim_buf_del_keymap, bufnr, "n", "<LeftRelease>")
         clear_buffer_mappings(bufnr)
     end
 end
@@ -369,13 +366,13 @@ end
 
 ---@param side ConflictSide @Which side of the conflict to keep.
 function M.choose(side)
-    local bufnr = api.nvim_get_current_buf()
-    local data = visited_buffers[api.nvim_buf_get_name(bufnr)]
+    local bufnr = vim.api.nvim_get_current_buf()
+    local data = visited_buffers[vim.api.nvim_buf_get_name(bufnr)]
     if not data or #data.positions == 0 then
         return
     end
 
-    local cursor = api.nvim_win_get_cursor(0)[1] - 1
+    local cursor = vim.api.nvim_win_get_cursor(0)[1] - 1
     local pos = vim.iter(data.positions):find(function(p)
         return cursor >= p.current.range_start and cursor <= p.incoming.range_end
     end)
@@ -392,7 +389,7 @@ function M.choose(side)
     if side == "current" or side == "both" then
         vim.list_extend(
             replacement,
-            api.nvim_buf_get_lines(
+            vim.api.nvim_buf_get_lines(
                 bufnr,
                 pos.current.content_start,
                 pos.current.content_end + 1,
@@ -403,7 +400,7 @@ function M.choose(side)
     if side == "incoming" or side == "both" then
         vim.list_extend(
             replacement,
-            api.nvim_buf_get_lines(
+            vim.api.nvim_buf_get_lines(
                 bufnr,
                 pos.incoming.content_start,
                 pos.incoming.content_end + 1,
@@ -414,7 +411,7 @@ function M.choose(side)
     if side == "base" then
         vim.list_extend(
             replacement,
-            api.nvim_buf_get_lines(
+            vim.api.nvim_buf_get_lines(
                 bufnr,
                 pos.ancestor.content_start,
                 pos.ancestor.content_end + 1,
@@ -422,7 +419,7 @@ function M.choose(side)
             )
         )
     end
-    api.nvim_buf_set_lines(
+    vim.api.nvim_buf_set_lines(
         bufnr,
         pos.current.range_start,
         pos.incoming.range_end + 1,
@@ -434,13 +431,13 @@ end
 
 ---@param direction "next"|"prev" @Jump direction.
 function M.navigate(direction)
-    local bufnr = api.nvim_get_current_buf()
-    local data = visited_buffers[api.nvim_buf_get_name(bufnr)]
+    local bufnr = vim.api.nvim_get_current_buf()
+    local data = visited_buffers[vim.api.nvim_buf_get_name(bufnr)]
     if not data or #data.positions == 0 then
         return
     end
 
-    local cursor = api.nvim_win_get_cursor(0)[1] - 1
+    local cursor = vim.api.nvim_win_get_cursor(0)[1] - 1
     local it = vim.iter(data.positions)
     if direction == "prev" then
         it:rev()
@@ -451,7 +448,7 @@ function M.navigate(direction)
         return direction == "next" and start > cursor or start < cursor
     end) or (direction == "next" and data.positions[1] or data.positions[#data.positions])
 
-    api.nvim_win_set_cursor(0, { target.current.range_start + 1, 0 })
+    vim.api.nvim_win_set_cursor(0, { target.current.range_start + 1, 0 })
 end
 
 ---@return string[] @List of file paths with unmerged conflicts.
@@ -480,12 +477,12 @@ end
 
 ---@param bufnr? integer @Buffer handle, 0 or nil for current.
 function M.clear(bufnr)
-    local b = (bufnr and bufnr ~= 0) and bufnr or api.nvim_get_current_buf()
-    if not api.nvim_buf_is_valid(b) then
+    local b = (bufnr and bufnr ~= 0) and bufnr or vim.api.nvim_get_current_buf()
+    if not vim.api.nvim_buf_is_valid(b) then
         return
     end
-    api.nvim_buf_clear_namespace(b, NAMESPACE, 0, -1)
-    api.nvim_buf_clear_namespace(b, ACTIONS_NAMESPACE, 0, -1)
+    vim.api.nvim_buf_clear_namespace(b, NAMESPACE, 0, -1)
+    vim.api.nvim_buf_clear_namespace(b, ACTIONS_NAMESPACE, 0, -1)
 end
 
 ---@param opts? table @User configuration overrides.
@@ -505,12 +502,12 @@ function M.setup(opts)
         list = M.list,
     }
 
-    api.nvim_create_user_command("Conflict", function(args)
+    vim.api.nvim_create_user_command("Conflict", function(args)
         local cmd = args.fargs[1]
         if cmds[cmd] then
             cmds[cmd](cmd == "refresh" and 0 or cmd)
         else
-            api.nvim_echo(
+            vim.api.nvim_echo(
                 { { "Conflict: Invalid command " .. (cmd or ""), "ErrorMsg" } },
                 true,
                 { err = true }
@@ -523,13 +520,13 @@ function M.setup(opts)
         end,
     })
 
-    api.nvim_create_autocmd("ColorScheme", { group = AUGROUP, callback = set_highlights })
+    vim.api.nvim_create_autocmd("ColorScheme", { group = AUGROUP, callback = set_highlights })
 
-    api.nvim_set_decoration_provider(NAMESPACE, {
+    vim.api.nvim_set_decoration_provider(NAMESPACE, {
         on_win = function(_, _, bufnr)
-            local b = visited_buffers[api.nvim_buf_get_name(bufnr)]
+            local b = visited_buffers[vim.api.nvim_buf_get_name(bufnr)]
             if
-                (not b or b.tick ~= api.nvim_buf_get_changedtick(bufnr))
+                (not b or b.tick ~= vim.api.nvim_buf_get_changedtick(bufnr))
                 and vim.bo[bufnr].buftype == ""
                 and vim.bo[bufnr].modifiable
             then
@@ -538,7 +535,7 @@ function M.setup(opts)
         end,
     })
 
-    local bufnr = api.nvim_get_current_buf()
+    local bufnr = vim.api.nvim_get_current_buf()
     if vim.bo[bufnr].buftype == "" and vim.bo[bufnr].modifiable then
         parse_buffer(bufnr)
     end
