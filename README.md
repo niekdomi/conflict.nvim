@@ -57,17 +57,18 @@ require("conflict").setup({
 
 ## Commands
 
-| Command              | Description                                   |
-| -------------------- | --------------------------------------------- |
-| `:Conflict current`  | Keep the **current** (local) changes          |
-| `:Conflict incoming` | Keep the **incoming** (remote) changes        |
-| `:Conflict both`     | Keep **both** sections                        |
-| `:Conflict base`     | Keep the **base** (ancestor) changes          |
-| `:Conflict none`     | Keep **neither** section                      |
-| `:Conflict next`     | Jump to the next conflict                     |
-| `:Conflict prev`     | Jump to the previous conflict                 |
-| `:Conflict list`     | List all conflicted files via `vim.ui.select` |
-| `:Conflict refresh`  | Manually re-parse the buffer                  |
+| Command              | Description                                    |
+| -------------------- | -----------------------------------------------|
+| `:Conflict current`  | Keep the **current** (local) changes           |
+| `:Conflict incoming` | Keep the **incoming** (remote) changes         |
+| `:Conflict both`     | Keep **both** sections                         |
+| `:Conflict base`     | Keep the **base** (ancestor) changes           |
+| `:Conflict none`     | Keep **neither** section                       |
+| `:Conflict next`     | Jump to the next conflict                      |
+| `:Conflict prev`     | Jump to the previous conflict                  |
+| `:Conflict list`     | List all conflicted files via `vim.ui.select`  |
+| `:Conflict qflist`   | Open all conflict markers in the quickfix list |
+| `:Conflict refresh`  | Manually re-parse the buffer                   |
 
 ## Mouse Support
 
