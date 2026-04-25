@@ -5,9 +5,7 @@ _A simple Neovim plugin to resolve merge conflicts with ease._
 Its inline conflict UI is similar to the one found in
 [VS Code](https://code.visualstudio.com/docs/sourcecontrol/merge-conflicts#_editor-conflict-markers).
 The plugin was inspired by the no longer maintained
-[git-conflict.nvim](https://github.com/akinsho/git-conflict.nvim). It began as
-a fork but resulted in a complete rewrite focused on a simpler codebase with the
-latest API.
+[git-conflict.nvim](https://github.com/akinsho/git-conflict.nvim).
 
 <div align="center">
   <img src="assets/screenshot.png" width="600" alt="conflict.nvim demo">
@@ -58,7 +56,7 @@ require("conflict").setup({
 ## Commands
 
 | Command              | Description                                    |
-| -------------------- | -----------------------------------------------|
+| -------------------- | ---------------------------------------------- |
 | `:Conflict current`  | Keep the **current** (local) changes           |
 | `:Conflict incoming` | Keep the **incoming** (remote) changes         |
 | `:Conflict both`     | Keep **both** sections                         |
