@@ -1,0 +1,11 @@
+{
+    "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+    "runtime.version": "LuaJIT",
+    "diagnostics.disable": [
+        "duplicate-type",
+        "duplicate-doc-alias",
+        "duplicate-doc-class",
+        "duplicate-doc-field"
+    ],
+    "workspace.library": ["$VIMRUNTIME/lua"]
+}

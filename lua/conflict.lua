@@ -486,7 +486,7 @@ function M.qflist()
     local items = {}
     for _, file in ipairs(files) do
         local ok, lines = pcall(vim.fn.readfile, file)
-        if ok then
+        if ok and type(lines) == "table" then
             for i, line in ipairs(lines) do
                 if line:match(CONFLICT_START) then
                     table.insert(items, { filename = file, lnum = i, text = line })
