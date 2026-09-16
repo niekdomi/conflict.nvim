@@ -55,7 +55,7 @@ jobs:
           neovim: true
           version: stable
 
-      - name: Install typstyle
+      - name: Install EmmyLua Check
         uses: taiki-e/install-action@v2
         with:
           tool: emmylua_check
