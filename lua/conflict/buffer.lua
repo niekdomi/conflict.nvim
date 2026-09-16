@@ -153,7 +153,7 @@ function M.choose(side)
     end
 
     local cursor = vim.api.nvim_win_get_cursor(0)[1] - 1
-    ---@diagnostic disable-next-line: call-non-callable
+    ---@diagnostic disable-next-line: call-non-callable, redundant-parameter
     local pos = vim.iter(positions):find(function(p)
         return cursor >= p.start_row and cursor <= p.end_row
     end)
@@ -187,7 +187,7 @@ function M.navigate(direction)
     end
 
     local cursor = vim.api.nvim_win_get_cursor(0)[1] - 1
-    ---@diagnostic disable-next-line: call-non-callable
+    ---@diagnostic disable-next-line: call-non-callable, redundant-parameter
     local it = vim.iter(positions)
     if direction == "prev" then
         it:rev()
