@@ -39,3 +39,34 @@ jobs:
 
       - name: Check Formatting
         run: codebook-lsp lint .
+
+  typecheck:
+    runs-on: ubuntu-latest
+    name: Typecheck
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      - name: Install emmylua_check
+        env:
+          EMMYLUA_VERSION: "0.25.1"
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "https://github.com/EmmyLuaLs/emmylua-analyzer-rust/releases/download/$EMMYLUA_VERSION/emmylua_check-linux-x64.tar.gz" \
+            | tar -xz -C "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check types
+        run: |
+          # .luarc.json resolves workspace.library through $VIMRUNTIME, which only
+          # Neovim exports to the processes it spawns.
+          VIMRUNTIME="$(nvim --headless -c 'lua io.write(vim.env.VIMRUNTIME)' -c q)" \
+            emmylua_check --warnings-as-errors --output-format github .
