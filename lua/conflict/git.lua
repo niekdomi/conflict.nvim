@@ -19,6 +19,7 @@ function M.get_conflicted_files()
     end
 
     -- Git reports paths relative to the repository root, not the current directory.
+    ---@diagnostic disable-next-line: call-non-callable
     return vim.iter(vim.split(unmerged, "\n", { trimempty = true }))
         :map(function(path)
             return root .. "/" .. path
