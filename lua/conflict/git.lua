@@ -15,7 +15,7 @@ function M.get_conflicted_files()
     local root = git("rev-parse", "--show-toplevel")
     local unmerged = root and git("diff", "--name-only", "--diff-filter=U")
     if not unmerged then
-        -- return {}
+        return {}
     end
 
     -- Git reports paths relative to the repository root, not the current directory.
