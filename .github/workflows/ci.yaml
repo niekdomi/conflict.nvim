@@ -64,3 +64,21 @@ jobs:
         run: |
           VIMRUNTIME="$(nvim --headless -c 'lua io.write(vim.env.VIMRUNTIME)' -c q)" \
             emmylua_check --warnings-as-errors --output-format github .
+
+  test:
+    runs-on: ubuntu-latest
+    name: Test
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      - name: Run tests
+        run: make test
