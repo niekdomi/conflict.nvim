@@ -7,5 +7,7 @@
     "duplicate-doc-class",
     "duplicate-doc-field"
   ],
-  "workspace.library": ["$VIMRUNTIME/lua"]
+  "diagnostics.globals": ["MiniTest"],
+  "workspace.library": ["$VIMRUNTIME/lua", "deps/mini.test/lua"],
+  "workspace.ignoreDir": ["deps"]
 }

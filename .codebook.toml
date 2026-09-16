@@ -12,6 +12,16 @@ words = [
   "nargs",
   "Wipeout",
   "virt",
+  "chdir",
+  "dofile",
+  "enew",
+  "getmousepos",
+  "laststatus",
+  "pcall",
+  "rtp",
+  "screencol",
+  "screenrow",
+  "winid",
 ]
 
 include_paths = [
