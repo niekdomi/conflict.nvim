@@ -2,9 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
+    types:
+      - edited
+      - opened
+      - synchronize
 
 jobs:
   format:
@@ -16,3 +22,45 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: latest
           args: --check .
+
+  spellcheck:
+    runs-on: ubuntu-latest
+    name: Spellcheck
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install typstyle
+        uses: taiki-e/install-action@v2
+        with:
+          tool: codebook-lsp
+
+      - name: Check Formatting
+        run: codebook-lsp lint .
+
+  typecheck:
+    runs-on: ubuntu-latest
+    name: Typecheck
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      - name: Install EmmyLua Check
+        uses: taiki-e/install-action@v2
+        with:
+          tool: emmylua_check
+
+      - name: Check types
+        run: |
+          VIMRUNTIME="$(nvim --headless -c 'lua io.write(vim.env.VIMRUNTIME)' -c q)" \
+            emmylua_check --warnings-as-errors --output-format github .

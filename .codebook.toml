@@ -1,12 +1,16 @@
+dictionaries = ["en_us"]
+
 words = [
-  "augroup",
-  "bufnr",
-  "lnum",
-  "nargs",
-  "neovim",
-  "niekdomi",
   "nvim",
+  "Neovim",
+  "bufnr",
   "qflist",
+  "toplevel",
+  "trimempty",
+  "lnum",
+  "augroup",
+  "nargs",
+  "Wipeout",
   "virt",
 ]
 
