@@ -1,0 +1,53 @@
+name: PR title rule
+
+on:
+  pull_request:
+    types:
+      - edited
+      - opened
+      - synchronize
+
+jobs:
+  pull-request-title:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+
+    steps:
+      - name: Validate PR Title
+        if: env.ACT != 'true'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          BOLD_RED="\033[1;31m"
+          BOLD_YELLOW="\033[1;33m"
+          BOLD_GREEN="\033[1;32m"
+          RESET="\033[0m"
+
+          keywords=(
+            build
+            chore
+            ci
+            docs
+            feat
+            fix
+            perf
+            refactor
+            test
+          )
+
+          keywords_regex_part=$(IFS="|"; echo "${keywords[*]}")
+          pattern="^(${keywords_regex_part}): ([A-Z].+\S)"
+
+          if ! [[ "$PR_TITLE" =~ $pattern ]]; then
+            echo -e "${BOLD_RED}❌ Pull Request title is invalid!${RESET}"
+            allowed_keywords_display=$(IFS=", "; echo "${keywords[*]}")
+            echo -e "${BOLD_YELLOW}The PR title must follow the format: <type>: <Description>${RESET}"
+            echo -e "${BOLD_YELLOW}Example: test: Added test${RESET}"
+            echo -e "${BOLD_YELLOW}The description must start with an uppercase letter (A-Z) and not contain grave.${RESET}"
+            echo -e "${BOLD_YELLOW}Allowed <type> values are: ${allowed_keywords_display}.${RESET}"
+            echo -e "${BOLD_YELLOW}Your title was: \"$PR_TITLE\"${RESET}"
+            exit 1
+          else
+            echo -e "${BOLD_GREEN}✅ Pull Request title is valid!${RESET}"
+          fi
+        shell: bash

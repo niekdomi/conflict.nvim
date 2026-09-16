@@ -2,9 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
+    types:
+      - edited
+      - opened
+      - synchronize
 
 jobs:
   format:
@@ -16,3 +22,20 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: latest
           args: --check .
+
+  spellcheck:
+    runs-on: ubuntu-latest
+    name: Spellcheck
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install typstyle
+        uses: taiki-e/install-action@v2
+        with:
+          tool: codebook-lsp
+
+      - name: Check Formatting
+        run: codebook-lsp lint .
