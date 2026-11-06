@@ -1,13 +1,27 @@
+dictionaries = ["en_us"]
+
 words = [
-  "augroup",
-  "bufnr",
-  "lnum",
-  "nargs",
-  "neovim",
-  "niekdomi",
   "nvim",
+  "Neovim",
+  "bufnr",
   "qflist",
+  "toplevel",
+  "trimempty",
+  "lnum",
+  "augroup",
+  "nargs",
+  "Wipeout",
   "virt",
+  "chdir",
+  "dofile",
+  "enew",
+  "getmousepos",
+  "laststatus",
+  "pcall",
+  "rtp",
+  "screencol",
+  "screenrow",
+  "winid",
 ]
 
 include_paths = [
